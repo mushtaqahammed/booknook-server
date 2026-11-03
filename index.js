@@ -11,6 +11,23 @@ const client = new MongoClient(process.env.MONGODB_URL);
 app.use(cors());
 app.use(express.json());
 
+const verifyUser = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  console.log("Authorization Header:", authHeader);
+
+  if (authHeader !== "user loged in") {
+    return res.status(401).send({
+      success: false,
+      message: "Unauthorized!",
+    });
+  }
+
+  console.log("User verified successfully");
+
+  next();
+};
+
 export async function connectToMongoDB() {
   try {
     await client.connect();
@@ -31,7 +48,7 @@ app.get("/", (req, res) => {
   res.send({ message: "Server is running fine!" });
 });
 
-app.post("/add-book", async (req, res) => {
+app.post("/add-book",  async (req, res) => {
   const data = req.body;
   const result = await addBookCollection.insertOne(data);
   res.send({ result });
@@ -41,22 +58,37 @@ app.get("/books", async (req, res) => {
   res.send(result);
 });
 
-app.get("/books/:id", async (req, res) => {
+app.get("/books/:id", verifyUser, async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).send({
+        message: "Invalid Book ID",
+      });
+    }
 
     const result = await addBookCollection.findOne({
       _id: new ObjectId(id),
     });
 
-    res.send(result);
+    if (!result) {
+      return res.status(404).send({
+        message: "Book not found",
+      });
+    }
+
+    res.status(200).send(result);
   } catch (error) {
     console.error(error);
-    res.status(500).send({ message: "Something went wrong" });
+
+    res.status(500).send({
+      message: "Something went wrong",
+    });
   }
 });
 
-app.get("/my-books/:userId", async (req, res) => {
+app.get("/my-books/:userId",  async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -68,7 +100,7 @@ app.get("/my-books/:userId", async (req, res) => {
     res.status(500).send({ message: "Something went wrong" });
   }
 });
-app.put("/books/:id", async (req, res) => {
+app.put("/books/:id", verifyUser, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -112,7 +144,7 @@ app.put("/books/:id", async (req, res) => {
   }
 });
 
-app.delete("/books/:id", async (req, res) => {
+app.delete("/books/:id", verifyUser, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -177,7 +209,6 @@ app.get("/borrows", async (req, res) => {
     res.status(500).send({ message: "Something went wrong" });
   }
 });
-
 
 app.get("/new-arrivals", async (req, res) => {
   const books = await addBookCollection
