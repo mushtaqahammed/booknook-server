@@ -20,7 +20,9 @@ const addBookCollection = db.collection("addbook");
 const addBorrowsBook = db.collection("borrows");
 
 // JWT Public Key
-const JWKS = createRemoteJWKSet(new URL("http://localhost:3000/api/auth/jwks"));
+const JWKS = createRemoteJWKSet(
+  new URL(`${process.env.CLIENT_URL}/api/auth/jwks`),
+);
 
 // Verify JWT Middleware
 const verifyToken = async (req, res, next) => {
@@ -40,8 +42,8 @@ const verifyToken = async (req, res, next) => {
 
     // Verify JWT token
     const { payload } = await jwtVerify(token, JWKS, {
-      issuer: "http://localhost:3000",
-      audience: "http://localhost:3000",
+      issuer: `${process.env.CLIENT_URL}`,
+      audience: `${process.env.CLIENT_URL}`,
     });
 
     // Store user information
@@ -68,7 +70,7 @@ app.get("/", (req, res) => {
 });
 
 // Add Book
-app.post("/add-book",verifyToken, async (req, res) => {
+app.post("/add-book", verifyToken, async (req, res) => {
   try {
     const data = req.body;
 
@@ -307,9 +309,6 @@ app.get("/borrows", async (req, res) => {
   }
 });
 
-
-
-
 // New Arrivals
 app.get("/new-arrivals", async (req, res) => {
   try {
@@ -329,20 +328,8 @@ app.get("/new-arrivals", async (req, res) => {
   }
 });
 
-// Start Server
-const startServer = async () => {
-  try {
-    await client.connect();
+app.listen(PORT, () => {
+  console.log(`Server is running at http://localhost:${PORT}`);
+});
 
-    console.log("You successfully connected to MongoDB!");
-
-    app.listen(PORT, () => {
-      console.log(`Server is running at http://localhost:${PORT}`);
-    });
-  } catch (error) {
-    console.error("MongoDB connection failed:", error);
-    process.exit(1);
-  }
-};
-
-startServer();
+export default app;
