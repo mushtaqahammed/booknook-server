@@ -136,48 +136,7 @@ app.delete("/books/:id", async (req, res) => {
 });
 
 
-app.post("/borrows", async (req, res) => {
-  try {
-    const data = req.body;
 
-    // Check if this user already borrowed this book
-    const alreadyBorrowed = await addBorrowsBook.findOne({
-      bookId: data.bookId,
-      userEmail: data.userEmail,
-    });
-
-    if (alreadyBorrowed) {
-      return res.status(409).send({
-        message: "You have already borrowed this book!",
-      });
-    }
-
-    const result = await addBorrowsBook.insertOne(data);
-
-    res.status(201).send({
-      message: "Book borrowed successfully!",
-      result,
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).send({
-      message: "Something went wrong",
-    });
-  }
-});
-
-app.get("/borrows", async (req, res) => {
-  try {
-    const { email } = req.query;
-
-    const result = await addBorrowsBook.find({ userEmail: email }).toArray();
-
-    res.send(result);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send({ message: "Something went wrong" });
-  }
-});
 
 app.get("/new-arrivals", async (req, res) => {
   const books = await addBookCollection
